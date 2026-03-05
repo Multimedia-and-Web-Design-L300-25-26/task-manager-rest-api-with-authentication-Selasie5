@@ -1,19 +1,21 @@
 import mongoose from "mongoose";
-
-
-// Create User schema
-// Fields:
-// - name (String, required)
-// - email (String, required, unique)
-// - password (String, required, minlength 6)
-// - createdAt (default Date.now)
-
-
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema({
-  // Students implement
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true, minlength: 6 },
+  createdAt: { type: Date, default: Date.now }
 });
 
-const User = mongoose.model("User", userSchema);
+userSchema.pre("save", async function(next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
 
-export default User;
+userSchema.methods.comparePassword = function(password) {
+  return bcrypt.compare(password, this.password);
+};
+
+export default mongoose.model("User", userSchema);
